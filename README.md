@@ -28,7 +28,7 @@ Ensure you have **Python 3.12** installed.
 ### 2. Installation
 ```bash
 # Clone the repository
-git clone <your-repo-link>
+git clone <https://github.com/alzoubitoqa/micro-assessment-agent.git>
 cd micro-assessment-agent
 
 # Create and activate virtual environment
