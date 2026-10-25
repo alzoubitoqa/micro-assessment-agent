@@ -48,21 +48,37 @@ def generate_hint(q: Question, student_answer: str) -> str:
 
 
 def simplify_question(q: Question) -> Question:
-    resp = _client.chat.completions.create(
-        model=LLM_MODEL,
-        response_format={"type": "json_object"},
-        messages=[{"role": "user", "content": SIMPLIFY_PROMPT.format(
-            question_text=q.question_text, options=q.options,
-        )}],
-    )
-    data = json.loads(resp.choices[0].message.content)
-    return Question(
-        question_id=q.question_id + "_simple",
-        concept=q.concept,
-        difficulty="easy",
-        question_text=data["question_text"],
-        options=data["options"],
-        correct_answer=data["correct_answer"],
-        explanation=q.explanation,
-        source_chunk_ids=q.source_chunk_ids,
-    )
+    try:
+        resp = _client.chat.completions.create(
+            model=LLM_MODEL,
+            response_format={"type": "json_object"},
+            messages=[{"role": "user", "content": SIMPLIFY_PROMPT.format(
+                question_text=q.question_text, options=q.options,
+            )}],
+        )
+        data = json.loads(resp.choices[0].message.content)
+        
+        # التحقق من سلامة البيانات القادمة من الـ LLM
+        correct_answer = data.get("correct_answer")
+        question_text = data.get("question_text")
+        options = data.get("options")
+        
+        if not correct_answer or not isinstance(correct_answer, str):
+            return q # إذا لم يعط إجابة صحيحة، نرجع السؤال الأصلي
+        if not question_text or not options or len(options) != 4:
+            return q # إذا كانت الخيارات ناقصة، نرجع السؤال الأصلي
+
+        return Question(
+            question_id=q.question_id + "_simple",
+            concept=q.concept,
+            difficulty="easy",
+            question_text=question_text,
+            options=options,
+            correct_answer=correct_answer,
+            explanation=q.explanation,
+            source_chunk_ids=q.source_chunk_ids,
+        )
+    except Exception as e:
+        # في حال حدوث أي خطأ غير متوقع (مثل انقطاع الاتصال)، نرجع السؤال الأصلي بدلاً من الانهيار
+        print(f"Warning: Failed to simplify question. Error: {e}")
+        return q

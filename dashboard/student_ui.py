@@ -118,30 +118,29 @@ if st.session_state.quiz_state is None:
     st.write("") # Spacer
 
     with st.container():
-        with st.form("start_form"):
-            st.subheader("🚀 Start Your Quiz")
-            student_id = st.text_input("👤 Your Name / ID:", placeholder="e.g., Toqa")
+        st.subheader("🚀 Start Your Quiz")
+        student_id = st.text_input("👤 Your Name / ID:", placeholder="e.g., Toqa")
+        
+        lectures = list_available_lectures()
+        if not lectures:
+            st.error("No lectures available. Please ask your instructor to upload one.")
+            st.stop()
             
-            lectures = list_available_lectures()
-            if not lectures:
-                st.error("No lectures available. Please ask your instructor to upload one.")
-                st.stop()
-                
-            lecture_file = st.selectbox("📚 Select Lecture:", lectures)
+        lecture_file = st.selectbox("📚 Select Lecture:", lectures)
+        
+        # هنا التعديل: جلب المفاهيم يعمل فوراً بمجرد اختيار المحاضرة
+        with st.spinner("Loading concepts..."):
+            concepts = extract_concepts(lecture_file)
             
-            with st.spinner("Loading concepts..."):
-                concepts = extract_concepts(lecture_file)
-                
-            concept_names = [c["name"] for c in concepts]
-            concept_name = st.selectbox("🧠 Select Concept to be tested on:", concept_names)
-            
-            submit = st.form_submit_button("🚀 Start Quiz")
-            
-            if submit:
-                if not student_id.strip():
-                    st.warning("⚠️ Please enter your name.")
-                else:
-                    start_quiz(student_id, lecture_file, concept_name)
+        concept_names = [c["name"] for c in concepts]
+        concept_name = st.selectbox("🧠 Select Concept to be tested on:", concept_names)
+        
+        st.write("") # Spacer
+        if st.button("🚀 Start Quiz", type="primary"):
+            if not student_id.strip():
+                st.warning("⚠️ Please enter your name.")
+            else:
+                start_quiz(student_id, lecture_file, concept_name)
 
 # ─── UI: QUIZ SCREEN ───────────────────────────────────────────────
 else:
